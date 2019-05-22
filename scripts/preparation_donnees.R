@@ -10,6 +10,7 @@ library(sf)
 library(rmapshaper)
 departements <- departements %>% 
   mutate(dpt = if_else(dpt %in% c("2A", "2B"), "20", dpt)) %>% 
+  filter(dpt != "976") %>% 
   group_by(dpt) %>% 
   summarise(nom = first(nom), geometry = st_union(geometry)) %>% 
   rmapshaper::ms_simplify(keep = 0.03) %>% 
