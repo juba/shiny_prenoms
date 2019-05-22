@@ -81,6 +81,39 @@ ui <- fluidPage(
                 screen(
                     htmlOutput("texte_carte"),
                     leafletOutput("graph_carte")
+                ),
+                screen(
+                    p("Que souhaitez-vous faire ?"),
+                    div(`data-glide-el`="controls",
+                        tags$button(`data-glide-dir`="<<", "Recommencer"),
+                        tags$button(`data-glide-dir`=">", "Comparer")
+                    )
+                ),
+                screen(
+                    next_condition = "input.prenoms_comp != ''",
+                    p("Comparer avec d'autres prénoms"),
+                    selectizeInput("prenoms_comp",
+                        "Prénoms :",
+                        choices = NULL,
+                        multiple = TRUE,
+                        options = selectize_options_multi)
+                ),
+                screen(
+                    htmlOutput("texte_evo_comp"),
+                    prettyRadioButtons(
+                        inputId = "graph_evo_comp_type",
+                        label = "", 
+                        choices = c("Nombre de naissances" = "n", "Pourcentage des naissances" = "prop"),
+                        inline = TRUE, 
+                        status = "info",
+                        animation = "jelly",
+                        fill = TRUE
+                    ),
+                    g2Output("graph_evo_comp")
+                ),
+                screen(
+                    htmlOutput("texte_carte_comp"),
+                    leafletOutput("graph_carte_comp")
                 )
             )
         )

@@ -37,6 +37,63 @@ leaflet_dpt <- function(data) {
 
 }
 
+leaflet_dpt_comp <- function(data) {
+
+  datas <- data %>% 
+    group_by(prenom) %>% 
+    group_split()
+  keys <- data %>% 
+    group_by(prenom) %>% 
+    group_keys() %>% 
+    pull(1)
+  
+  datas <- purrr::map2(datas, keys, function(data, key) {
+    departements %>% 
+      left_join(data, by = "dpt") %>% 
+      mutate(prenom = ifelse(is.na(prenom), key, prenom)) %>% 
+      mutate(label = paste0("<strong>", nom, "</strong><br />",
+        "Nombre de naissances : ", nb, "<br />",
+        "Pourcentage des naissances : ", round(prop, 3), "%<br />"))
+  })
+  
+  pal <- colorNumeric("YlGnBu", data$prop)
+  highlight_options <- highlightOptions(color = "#F99800", weight = 2,
+    bringToFront = TRUE)
+  label_options <- list(opacity = 0.9, offset = c(0, -40), direction = "top")
+  
+  map <- leaflet()
+  
+  for(i in seq_along(datas)) {
+    print(i)
+    map <- map %>% 
+      addPolygons(data = datas[[i]], 
+        group = keys[i],
+        label = ~purrr::map(label, htmltools::HTML),
+        labelOptions = label_options,
+        color = "#444444", weight = 1, smoothFactor = 1,
+        opacity = 1.0, fillOpacity = 0.9,
+        fillColor = ~pal(prop),
+        highlightOptions =  highlight_options)
+  }
+  
+  map <- map %>% 
+    addLegend("bottomright",
+      pal = pal, values = data$prop,
+      title = "(en %)",
+      opacity = 1,
+      na.label = "NA") %>% 
+    addLayersControl(
+      baseGroups = as.character(keys),
+      options = layersControlOptions(collapsed = FALSE)
+    )
+  
+  map  
+
+}
+
+
+
+
 
 compare_dpt <- function(data, periode) {
   

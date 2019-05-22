@@ -2,6 +2,8 @@
 server <- function(input, output, session) {
   
     updateSelectizeInput(session, 'prenom', choices = c(NA, liste_prenoms), server = TRUE)  
+    updateSelectizeInput(session, 'prenoms_comp', choices = liste_prenoms, server = TRUE)  
+  
 
     periode <- reactive({
       min <- input$periode[1]
@@ -75,6 +77,7 @@ server <- function(input, output, session) {
     })
     outputOptions(output, "screen_test_prenoms_periode", suspendWhenHidden = FALSE)
     
+    ## OUTPUTS PRÉNOM SEUL ---------------------------------
     
     generate_texte <- function(intro_text) {
       text <- paste(intro_text, "<strong>", input$prenom, "</strong>")
@@ -228,5 +231,91 @@ server <- function(input, output, session) {
       if(nrow(data_carte()) == 0) return(NULL)
       leaflet_dpt(data_carte())
     })
+
     
+    ## OUTPUTS COMPARAISON ---------------------------------
+    
+    generate_texte_comp <- function() {
+      text <- "Comparaison" 
+      if (length(periode()) == 1) {
+        text <- paste0(text, " en ", periode())
+      } else {
+        text <- paste0(text, " de ", input$periode[1], " à ", input$periode[2])
+      }
+      text
+    }
+    
+    output$texte_evo_comp <- renderUI({
+      text <- paste0("<p>",
+        generate_texte_comp(),
+        ".</p>")
+      return(HTML(text))
+    })
+    
+    data_evo_comp <- reactive({
+      data_nat %>% 
+        filter(annee %in% periode()) %>%
+        mutate(prenom = if_else(prenom %in% prenoms_choisis(), input$prenom, prenom)) %>% 
+        group_by(annee) %>% 
+        mutate(n_annee = sum(n)) %>% 
+        ungroup %>% 
+        filter(
+          prenom %in% c(prenoms_choisis(), input$prenoms_comp),
+        ) %>% 
+        group_by(annee, prenom) %>% 
+        summarise(
+          n = sum(n),
+          n_annee = first(n_annee),
+          `%` = round(n / n_annee * 100, 3)
+        )
+    })
+    
+    output$graph_evo_comp <- renderG2({
+      if (input$prenom == "") return(NULL)
+      if (is.null(input$prenoms_comp) || input$prenoms_comp == "") return(NULL)
+      if(nrow(data_evo_comp()) == 0) return(NULL)
+      
+      if (input$graph_evo_comp_type == "n") {
+        var <- sym("n")
+        y_title <- "Nombre de naissances"
+      }
+      if (input$graph_evo_comp_type == "prop") {
+        var <- sym("%")
+        y_title <- "Pourcentage des naissances"
+      }
+      
+      g2(data_evo_comp(), asp(x = annee, y = !!var, color = prenom)) %>% 
+        fig_line() %>% 
+        gauge_x_linear(title = "Années", nice = FALSE) %>% 
+        gauge_y_linear(title = y_title, min = 0) %>% 
+        conf_legend(position = "right")
+    })
+    
+    output$texte_carte_comp <- renderUI({
+      text <- paste0("<p>",
+        generate_texte_comp(),
+        ".</p>")
+      return(HTML(text))
+    })
+    
+    data_carte_comp <- reactive({
+      data_dpt %>% 
+        filter(annee %in% periode()) %>% 
+        add_count(dpt, name = "naissances_dpt") %>%
+        mutate(prenom = if_else(prenom %in% prenoms_choisis(), input$prenom, prenom)) %>% 
+        filter(prenom %in% c(prenoms_choisis(), input$prenoms_comp)) %>% 
+        group_by(dpt, prenom) %>% 
+        summarise(
+          nb = sum(n),
+          prop = sum(n) / sum(naissances_dpt) * 100
+        ) 
+    })
+    output$graph_carte_comp <- renderLeaflet({
+      if (input$prenom == "") return(NULL)
+      if(nrow(data_carte_comp()) == 0) return(NULL)
+      leaflet_dpt_comp(data_carte_comp())
+    })
+    
+    
+        
 }
