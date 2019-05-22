@@ -27,10 +27,12 @@ data_dpt <- data_dpt %>%
     n = nombre) %>% 
   filter(annee != "XXXX") %>% 
   mutate(annee = as.numeric(annee)) %>% 
-  mutate(sexe = as.character(sexe),
-         sexe = fct_recode(sexe,
+  mutate(
+    sexe = as.character(sexe),
+    sexe = fct_recode(sexe,
            "M" = "1",
-           "F" = "2"))
+           "F" = "2"),
+    sexe = as.character(sexe))
 
 data_nat <- read_tsv("data/raw/nat2017.txt")
 data_nat <- data_nat %>% 
@@ -39,10 +41,12 @@ data_nat <- data_nat %>%
     n = nombre) %>% 
   filter(annee != "XXXX") %>% 
   mutate(annee = as.numeric(annee)) %>% 
-  mutate(sexe = as.character(sexe),
+  mutate(
+    sexe = as.character(sexe),
     sexe = fct_recode(sexe,
       "M" = "1",
-      "F" = "2")) %>% 
+      "F" = "2"),
+    sexe = as.character(sexe)) %>% 
   filter(nchar(prenom) > 1)
 
 liste_prenoms <- unique(data_nat$prenom)
