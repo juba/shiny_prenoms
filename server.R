@@ -108,7 +108,7 @@ server <- function(input, output, session) {
         tmp <- data_nat
       }
       
-      tmp %>% 
+      tmp <- tmp %>% 
         filter(annee %in% periode()) %>% 
         mutate(n_total = sum(n)) %>% 
         filter(prenom != "_PRENOMS_RARES") %>% 
@@ -123,17 +123,38 @@ server <- function(input, output, session) {
         arrange(desc(n)) %>% 
         mutate(Classement = 1:n()) %>% 
         select(Classement, Prénom = prenom, Sexe = sexe, Naissances = n, `%`)
+
+      empty_line <- tibble(
+        Classement = NA, Prénom = "...", 
+        Sexe = "...", Naissances = NA, `%` = NA
+      )
+      
+      classement_prenom <- tmp$Classement[tmp$Prénom == input$prenom]
+      if (length(classement_prenom) == 0 || classement_prenom %in% 1:10) {
+        tab <- tmp %>% slice(1:10) %>% bind_rows(empty_line)
+      } else {
+        tab <- tmp %>% 
+          slice(1:10) %>% 
+          bind_rows(empty_line)
+        rows_prenom <- tmp %>% slice(classement_prenom)
+        for (i in 1:nrow(rows_prenom)) {
+          tab <- tab %>% 
+            bind_rows(rows_prenom %>% slice(i)) %>% 
+            bind_rows(empty_line)
+        }
+      }
+      
+      tab <- tab %>% 
+        mutate(Prénom = ifelse(Prénom == input$prenom,
+          paste0("<strong>",Prénom,"</strong>"),
+          Prénom))
+      
+      tab
     })
     
-    output$tab_pop_top <- renderTable({
-      data_pop() %>% slice(1:10)
-    }, striped = TRUE, hover = TRUE)
-    
-    output$tab_pop_prenom <- renderTable({
-      classement_prenom <- data_pop()$Classement[data_pop()$Prénom == input$prenom]
-      if (length(classement_prenom) == 0 || classement_prenom %in% 1:10) return(NULL)
-      data_pop() %>% slice(classement_prenom)
-    }, striped = TRUE, hover = TRUE)
+    output$tab_pop <- renderTable({
+        data_pop()
+    }, striped = TRUE, hover = TRUE, na = "", sanitize.text.function = function(x) x)
     
     output$texte_evo <- renderUI({
       text <- paste0("<p>",

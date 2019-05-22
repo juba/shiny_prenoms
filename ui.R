@@ -63,9 +63,7 @@ ui <- fluidPage(
                         animation = "jelly",
                         fill = TRUE
                     ),
-                    tableOutput("tab_pop_top"),
-                    p("..."),
-                    tableOutput("tab_pop_prenom")
+                    tableOutput("tab_pop")
                 ),
                 screen(
                     htmlOutput("texte_evo"),
