@@ -1,44 +1,36 @@
 library(shinyWidgets)
 library(shinythemes)
-library(shinyreveal)
+library(shinyglide)
+library(shinycssloaders)
 devtools::load_all("~/r/packages/shinyglide/")
 
-css <- "
-.tabtext {
-    margin-top: 1em;
-}
-"
+options(spinner.type = 7)
+options(spinner.color = "#999999")
 
-selectize_options <- list(selectOnTab = TRUE, openOnFocus = FALSE, maxOptions = 100)
-selectize_options_multi <- c(selectize_options, list(plugins = list("remove_button")))
 
 ui <- fluidPage(
     title = "Prénoms 1900-2017",
-    header = tags$head(
-        tags$style(css)
-    ),
+    theme = "shiny_prenoms.css",
     fluidRow(
         column(8, offset = 2,
-            titlePanel("Prénoms 1900-2017"),
             glide(
                 height = "600px",
-                next_label = "Suivant",
-                previous_label = "Précédent",
+                next_label = 'Suivant <span class="glyphicon glyphicon-chevron-right" aria-hidden="true"></span>',
+                previous_label = '<span class="glyphicon glyphicon-chevron-left" aria-hidden="true"></span> Précédent',
+                loading_label = "Chargement",
                 disable_type = "disable",
+                
+                screen(
+                    h2("Prénoms donnés à la naissance en France"),
+                    h3("1900-2017")
+                ),
                 screen(
                     next_condition = "input.prenom != ''",
                     selectizeInput("prenom",
                         "Prénom :",
                         choices = NULL,
                         multiple = FALSE,
-                        options = selectize_options)
-                ),
-                screenOutput(
-                    "screen_test_prenom"
-                ),
-                screenOutput("screen_sexe"),
-                screenOutput("screen_similaires"),
-                screen(
+                        options = selectize_options),
                     sliderInput("periode",
                         "Période :",
                         min = 1900,
@@ -48,10 +40,7 @@ ui <- fluidPage(
                         sep = "",
                         width = "100%")
                 ),
-                screenOutput(
-                    "screen_test_prenoms_periode",
-                    next_condition = '1 == 2'
-                ),
+                screenOutput("screen_sexe_similaires"),
                 screen(
                     htmlOutput("texte_pop"),
                     prettyRadioButtons(
@@ -63,7 +52,7 @@ ui <- fluidPage(
                         animation = "jelly",
                         fill = TRUE
                     ),
-                    tableOutput("tab_pop")
+                    withSpinner(tableOutput("tab_pop"))
                 ),
                 screen(
                     htmlOutput("texte_evo"),
@@ -76,116 +65,88 @@ ui <- fluidPage(
                         animation = "jelly",
                         fill = TRUE
                     ),
-                    g2Output("graph_evo")
+                    withSpinner(g2Output("graph_evo"))
                 ),
                 screen(
                     htmlOutput("texte_carte"),
-                    leafletOutput("graph_carte")
-                ),
-                screen(
-                    p("Que souhaitez-vous faire ?"),
-                    div(`data-glide-el`="controls",
-                        tags$button(`data-glide-dir`="<<", "Recommencer"),
-                        tags$button(`data-glide-dir`=">", "Comparer")
-                    )
-                ),
-                screen(
-                    next_condition = "input.prenoms_comp != ''",
-                    p("Comparer avec d'autres prénoms"),
-                    selectizeInput("prenoms_comp",
-                        "Prénoms :",
-                        choices = NULL,
-                        multiple = TRUE,
-                        options = selectize_options_multi)
-                ),
-                screen(
-                    htmlOutput("texte_evo_comp"),
-                    prettyRadioButtons(
-                        inputId = "graph_evo_comp_type",
-                        label = "", 
-                        choices = c("Nombre de naissances" = "n", "Pourcentage des naissances" = "prop"),
-                        inline = TRUE, 
-                        status = "info",
-                        animation = "jelly",
-                        fill = TRUE
+                    withSpinner((leafletOutput("graph_carte"))
                     ),
-                    g2Output("graph_evo_comp")
-                ),
-                screen(
-                    htmlOutput("texte_carte_comp"),
-                    leafletOutput("graph_carte_comp")
+                    screen(
+                        p("Que souhaitez-vous faire ?"),
+                        div(`data-glide-el`="controls",
+                            tags$button(`data-glide-dir`="={1}", "Recommencer"),
+                            tags$button(`data-glide-dir`=">", "Comparer")
+                        )
+                        ),
+                    screen(
+                        next_condition = "input.prenoms_comp != ''",
+                        p("Comparer avec d'autres prénoms"),
+                        fluidRow(
+                            column(7,
+                                selectizeInput("prenoms_comp1",
+                                    "Prénoms :",
+                                    choices = NULL,
+                                    multiple = TRUE,
+                                    options = selectize_options_multi)
+                                ),
+                            column(5,
+                                selectInput("sexe_comp1",
+                                    "Filter sur le sexe :",
+                                    choices = select_sexe_choices)
+                            )
+                        ),
+                        fluidRow(
+                            column(7,
+                                selectizeInput("prenoms_comp2",
+                                    "Prénoms :",
+                                    choices = NULL,
+                                    multiple = TRUE,
+                                    options = selectize_options_multi)
+                            ),
+                            column(5,
+                                selectInput("sexe_comp2",
+                                    "Filter sur le sexe :",
+                                    choices = select_sexe_choices)
+                            )
+                        ),
+                        fluidRow(
+                            column(7,
+                                selectizeInput("prenoms_comp3",
+                                    "Prénoms :",
+                                    choices = NULL,
+                                    multiple = TRUE,
+                                    options = selectize_options_multi)
+                            ),
+                            column(5,
+                                selectInput("sexe_comp3",
+                                    "Filter sur le sexe :",
+                                    choices = select_sexe_choices)
+                            )
+                        )
+                    ),
+                    screen(
+                        htmlOutput("texte_evo_comp"),
+                        prettyRadioButtons(
+                            inputId = "graph_evo_comp_type",
+                            label = "", 
+                            choices = c("Nombre de naissances" = "n", "Pourcentage des naissances" = "prop"),
+                            inline = TRUE, 
+                            status = "info",
+                            animation = "jelly",
+                            fill = TRUE
+                        ),
+                        withSpinner(g2Output("graph_evo_comp"))
+                    ),
+                    screen(
+                        htmlOutput("texte_carte_comp"),
+                        withSpinner(leafletOutput("graph_carte_comp"))
+                    )
                 )
             )
         )
     )
 )
-                
-    
-    # 
-    # tabPanel("Caractéristique d'un prénom", 
-    #     sidebarLayout(
-    #             uiOutput("ui_sexe_filter"),
-    #             sliderInput("prenom_annees",
-    #                 "Période :",
-    #                 min = 1900,
-    #                 max = 2017,
-    #                 value = c(1900,2017),
-    #                 step = 1)
-    #         ),
-    #         
-    #         mainPanel(
-    #             tabsetPanel(
-    #                 tabPanel("Répartition géographique",
-    #                     htmlOutput(class = "tabtext", "leafletText"),
-    #                     leafletOutput("leafletPlot", height = 800)
-    #                 ),
-    #                 tabPanel("Évolution dans le temps",
-    #                     htmlOutput(class = "tabtext", "evo1Text"),
-    #                     plotOutput("evo1Plot", height = 600)
-    #                 )
-    #             )
-    #         )
-    #     )
-    # ),
-    # 
-    # tabPanel("Comparaison de prénoms",
-    #     sidebarLayout(
-    #         sidebarPanel(
-    #             selectizeInput("prenoms",
-    #                 "Prénom(s) :",
-    #                 choices = NULL,
-    #                 multiple = TRUE,
-    #                 options = selectize_options_multi),
-    #             sliderInput("prenoms_annees",
-    #                 "Période :",
-    #                 min = 1900,
-    #                 max = 2017,
-    #                 value = c(1900,2017),
-    #                 step = 1)
-    #         ),
-    #         
-    #         mainPanel(
-    #             tabsetPanel(
-    #                 tabPanel("Répartition géographique",
-    #                     htmlOutput(class = "tabtext", "dptText"),
-    #                     plotOutput("dptPlot", height = 800)
-    #                 ),
-    #                 tabPanel("Évolution dans le temps",
-    #                     htmlOutput(class = "tabtext", "evoText"),
-    #                     plotOutput("evoPlot", height = 600)
-    #                 )
-    #             )
-    #         )
-    #     )
-    # ),
-    # 
-    # tabPanel("À propos",
-    #     p("Départements 2017"),
-    #     p("Données nationales pour comparaison"),
-    #     p("Source : https://www.insee.fr/fr/statistiques/2540004"),
-    #     p("Accents"),
-    #     p("")
-    # )
+
 
 
 

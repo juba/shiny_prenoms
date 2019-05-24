@@ -8,15 +8,23 @@ load(file = "data/prenoms_2017.Rdata")
 load(file = "data/departements_2017.Rdata")
 
 
+selectize_options <- list(selectOnTab = TRUE, openOnFocus = FALSE, maxOptions = 100)
+selectize_options_multi <- c(selectize_options, list(plugins = list("remove_button")))
+select_sexe_choices <- c("Garder les deux sexes" = "both", 
+  "Seulement les garçons" = "M", 
+  "Seulement les filles" = "F")
+
 leaflet_dpt <- function(data) {
   
   data <- departements %>% 
     left_join(data, by = "dpt") %>% 
     mutate(label = paste0("<strong>", nom, "</strong><br />",
       "Nombre de naissances : ", nb, "<br />",
-      "Pourcentage des naissances : ", round(prop, 1), "%<br />"))
+      ifelse(!is.na(prop), paste("Pourcentage des naissances : ", 
+        round(prop, 3), "%<br />"), "")))
 
-  pal <- colorNumeric("YlGnBu", data$prop)
+  domain <- if (all(is.na(data$prop))) NULL else data$prop
+  pal <- colorNumeric("YlGnBu", domain)
   highlight_options <- highlightOptions(color = "#F99800", weight = 2,
     bringToFront = TRUE)
   label_options <- list(opacity = 0.9, offset = c(0, -40), direction = "top")
@@ -64,7 +72,6 @@ leaflet_dpt_comp <- function(data) {
   map <- leaflet()
   
   for(i in seq_along(datas)) {
-    print(i)
     map <- map %>% 
       addPolygons(data = datas[[i]], 
         group = keys[i],
@@ -95,31 +102,19 @@ leaflet_dpt_comp <- function(data) {
 
 
 
-compare_dpt <- function(data, periode) {
-  
-  data <- departements %>% 
-    left_join(data, by = "dpt")
-  
-  ggplot(data) + 
-    geom_sf(aes(fill = prop), color = "white", size = 0.2) +
-    scale_fill_viridis_c("Pourcentage\ndes naissances") + 
-    ggtitle(paste("Répartition des naissances de", min(periode), "à", max(periode))) +
-    theme_minimal() +
-    theme(axis.text.x = element_blank(),
-      axis.text.y = element_blank()) +
-    facet_wrap(~prenom)
-  
-}
+# compare_dpt <- function(data, periode) {
+#   
+#   data <- departements %>% 
+#     left_join(data, by = "dpt")
+#   
+#   ggplot(data) + 
+#     geom_sf(aes(fill = prop), color = "white", size = 0.2) +
+#     scale_fill_viridis_c("Pourcentage\ndes naissances") + 
+#     ggtitle(paste("Répartition des naissances de", min(periode), "à", max(periode))) +
+#     theme_minimal() +
+#     theme(axis.text.x = element_blank(),
+#       axis.text.y = element_blank()) +
+#     facet_wrap(~prenom)
+#   
+# }
 
-
-graphe_evo <- function(data, periode) {
-  
-  n_prenoms <- n_distinct(data$prenom)
-  
-  g <- ggplot(data) + 
-    geom_line(aes(x = annee, y = n, color = prenom)) +
-    scale_color_brewer("Prénom", palette = "Set1") +
-    scale_x_continuous("Année", breaks = seq(min(periode), max(periode), 10)) +
-    scale_y_continuous("Nombre de naissances", limits = c(0,NA))
-  
-}
