@@ -4,13 +4,14 @@ server <- function(input, output, session) {
     updateSelectizeInput(session, 'prenoms_comp1', choices = c(NA, liste_prenoms), server = TRUE)
     updateSelectizeInput(session, 'prenoms_comp2', choices = c(NA, liste_prenoms), server = TRUE)
     updateSelectizeInput(session, 'prenoms_comp3', choices = c(NA, liste_prenoms), server = TRUE)
+    updateSelectizeInput(session, 'prenoms_comp4', choices = c(NA, liste_prenoms), server = TRUE)
   
 
     periode <- reactive({
-      seq(input$periode[1], input$periode[2])
+      c(input$periode[1], input$periode[2])
     })
     
-    nb_sexe_prenom <- reactive({
+    nb_sexes_prenom <- reactive({
       if (req(input$prenom) == "") return(2)
       sexes_prenoms$n[sexes_prenoms$prenom == input$prenom]
     })
@@ -18,13 +19,15 @@ server <- function(input, output, session) {
     prenoms_similaires <- reactive({
       prenom_ascii <- iconv(input$prenom, to='ASCII//TRANSLIT')
       prenom_ascii <- str_replace_all(prenom_ascii, "(.)\\1", "\\1")
-      res <- liste_prenoms[liste_prenoms_ascii == prenom_ascii]
+      similaires <- liste_prenoms_ascii == prenom_ascii 
+      res <- liste_prenoms[similaires]
       res[res != input$prenom]
     })
     
-    output$screen_sexe_similaires <- renderUI({
+    output$screen_affine_prenom <- renderUI({
+      if (input$prenom == "") return(NULL)
       out <- NULL
-      if (nb_sexe_prenom() == 2) {
+      if (nb_sexes_prenom() == 2) {
         out <- list(out,
           selectInput("sexe",
             "Filter sur le sexe :",
@@ -42,10 +45,18 @@ server <- function(input, output, session) {
       }
       tagList(out)
     })
-    outputOptions(output, "screen_sexe_similaires", suspendWhenHidden = FALSE, priority = 1000)
+    outputOptions(output, "screen_affine_prenom", suspendWhenHidden = FALSE, priority = 1000)
+    
+    observeEvent(input$sexe, {
+      updatePrettyRadioButtons(
+        session = session,
+        inputId = "tab_pop_type",
+        selected = input$sexe
+      )
+    }, ignoreNULL = FALSE)
     
     sexe_prenom <- reactive({
-      if (nb_sexe_prenom() < 2 || req(input$sexe) == "both") return(c("M", "F"))
+      if (nb_sexes_prenom() < 2 || req(input$sexe) == "both") return(c("M", "F"))
       input$sexe
     })
 
@@ -54,330 +65,377 @@ server <- function(input, output, session) {
       c(input$prenom, input$prenoms_similaires)
     })
     
-    output$screen_test_prenoms_periode <- renderUI({
-      tmp <- data_nat %>% 
-        filter(
-          prenom %in% prenoms_choisis(),
-          sexe %in% sexe_prenom(),
-          annee %in% periode()
-        )
-      if (nrow(tmp) > 0) return(NULL)
-      p("Le prénom choisi n'existe pas dans la base à cette période.")
-    })
-    outputOptions(output, "screen_test_prenoms_periode", suspendWhenHidden = FALSE, priority = 1000)
+    # output$screen_test_prenoms_periode <- renderUI({
+    #   tmp <- data_nat %>% 
+    #     filter(
+    #       prenom %in% prenoms_choisis(),
+    #       sexe %in% sexe_prenom(),
+    #       annee %in% periode()
+    #     )
+    #   if (nrow(tmp) > 0) return(NULL)
+    #   p("Le prénom choisi n'existe pas dans la base à cette période.")
+    # })
+    # outputOptions(output, "screen_test_prenoms_periode", suspendWhenHidden = FALSE, priority = 1000)
     
 
     ## OUTPUTS PRÉNOM SEUL ---------------------------------
     
-    generate_texte <- function(intro_text) {
-      text <- paste(intro_text, "<strong>", input$prenom, "</strong>")
-      if (!is.null(input$sexe) && input$sexe != "both") {
-        text <- paste0(text, " (sexe = ", input$sexe, ")")
-      }
-      if (length(periode()) == 1) {
-        text <- paste0(text, " en ", periode())
-      } else {
-        text <- paste0(text, " de ", input$periode[1], " à ", input$periode[2])
-      }
-      text
-    }
+    ## Légendes
     
-    output$texte_pop <- renderUI({
-      text <- paste0("<p>",
-        generate_texte("Popularité de"),
-        ".</p>")
-      return(HTML(text))
+    label_prenom <- reactive({
+      text_sexe <- ""
+      if (!is.null(input$sexe) && input$sexe != "both") {
+        text_sexe <- glue(" ({input$sexe})")
+      }
+      glue("<strong>{input$prenom} {text_sexe}</strong>")
     })
     
+    label_periode <- reactive({
+      if (length(periode()) == 1) {
+        return(glue(" en {periode()}"))
+      } else {
+        return(glue(" de {input$periode[1]} à {input$periode[2]}"))
+      }
+    })
     
-    empty_line <- tibble(
-      Classement = NA, Prénom = "...", 
+    output$legende_pop <- renderUI({
+      HTML(glue("Popularité de <strong>{label_prenom()}</strong> {label_periode()}."))
+    })
+    
+    output$legende_evo <- renderUI({
+      HTML(glue("Évolution des naissances de <strong>{label_prenom()}</strong> {label_periode()}."))
+    })
+
+    output$legende_carte <- renderUI({
+      HTML(glue("Répartition des naissances de <strong>{label_prenom()}</strong> {label_periode()}."))
+    })
+    
+    ## DONNÉES
+    
+    empty_line <- data.table(
+      Classement = NA, `Prénom` = "...", 
       Sexe = "...", Naissances = NA, `%` = NA
     )
+    
+    data_nat_periode <- reactive({
+      data_nat[annee %between% periode()]
+    })
+    
+    data_dpt_periode <- reactive({
+      data_dpt[annee %between% periode()]
+    })
+    
+    regroupe_prenoms_choisis <- function(data) {
+      data[prenom %chin% prenoms_choisis(), prenom := input$prenom]
+    }
+    
+    ## Données popularité
     
     data_pop <- reactive({
       
       if (input$prenom == "") return(NULL)
       
-      tmp <- data_nat %>% 
-        filter(annee %in% periode())
+      d <- data_nat_periode()
       
-      if (input$tab_pop_type == "M") {
-        tmp <- tmp %>% filter(sexe == "M")
-      } else if (input$tab_pop_type == "F") {
-        tmp <- tmp %>% filter(sexe == "F") 
+      if (input$tab_pop_type != "both") {
+        d <- d[sexe == input$tab_pop_type]
       }
       
-      tmp <- tmp %>% 
-        mutate(prenom = if_else(prenom %in% prenoms_choisis(), input$prenom, prenom)) %>% 
-        group_by(prenom, sexe) %>% 
-        summarise(n = as.integer(sum(n))) %>% 
-        ungroup() %>% 
-        mutate(n_total = sum(n),
-               `%` = round(n / n_total * 100, 3)) %>% 
-        filter(prenom != "_PRENOMS_RARES") %>% 
-        arrange(desc(n)) %>% 
-        mutate(Classement = 1:n()) %>% 
-        select(Classement, Prénom = prenom, Sexe = sexe, Naissances = n, `%`)
+      regroupe_prenoms_choisis(d)
+      d <- d[, .(n = sum(n)), by = .(prenom, sexe)]
+      d[, n_total := sum(n)]
+      d[, `%` := (n / n_total * 100), by = .(prenom, sexe)]
+      d <- d[prenom != "_PRENOMS_RARES"]
+      setorderv(d, "n", order = -1L)
+      d[, Classement := 1:.N]
+      d <- d[, .(Classement, prenom, sexe, n, `%`)]
+      setnames(d, c("prenom", "sexe", "n"),
+                    c("Prénom", "Sexe", "Naissances"))
 
-      classement_prenom <- tmp$Classement[tmp$Prénom == input$prenom]
-      tab <- tmp %>% slice(1:10) %>% bind_rows(empty_line)
+      classement_prenom <- d[Prénom == input$prenom, Classement]
+      tab <- rbind(d[1:10], empty_line, use.names = FALSE)
       if (length(classement_prenom) == 0) {
-        tab <- tab %>% 
-          bind_rows(tibble(Classement = NA, Prénom = input$prenom, 
-            Sexe ="...", Naissances = 0L, `%` = NA))
+        tab <- rbind(tab,
+          data.table(Classement = NA, `Prénom` = input$prenom, 
+            Sexe ="...", Naissances = 0L, `%` = NA),
+          use.names = FALSE)
       }
       else if (!all(classement_prenom %in% 1:10)) {
-        tab <- tab %>% 
-          slice(1:10) %>% 
-          bind_rows(empty_line)
-        rows_prenom <- tmp %>% slice(classement_prenom)
+        rows_prenom <- d[classement_prenom]
         for (i in 1:nrow(rows_prenom)) {
-          tab <- tab %>% 
-            bind_rows(rows_prenom %>% slice(i)) %>% 
-            bind_rows(empty_line)
+          l <- list(tab,
+                    rows_prenom[i],
+                    empty_line)
+          tab <- rbindlist(l, use.names = FALSE)
         }
       }
     
-      tab <- tab %>% 
-        mutate(Prénom = ifelse(Prénom == input$prenom,
-          paste0("<strong>",Prénom,"</strong>"),
-          Prénom))
-      
-      tab
+      tab[Prénom == input$prenom, Prénom := glue("<strong>{Prénom}</strong>")]
     })
+    
+    
+    ## Données évolution
+    
+    data_evo <- reactive({
+      
+      if(input$prenom == "") return(NULL)
+      
+      d <- data_nat_periode()
+      d <- d[prenom %chin% prenoms_choisis()][sexe %chin% sexe_prenom()]
+      d[, prenom := input$prenom]
+      d <- d[, .(n = sum(n), n_annee = data.table::first(n_annee)), by = .(annee, prenom)]
+      d[, `%` := n / n_annee * 100]
+      tidyr::complete(d, 
+        prenom, annee = seq(periode()[1], periode()[2]), 
+        fill = list(n = 0, `%` = 0))
+    })
+    
+    ## Données carte par département
+    
+    data_carte <- reactive({
+      
+      if(input$prenom == "") return(NULL)
+      
+      d <- data_dpt_periode()
+      d[, naissances_dpt := sum(n), by = dpt]
+      d <- d[prenom %chin% prenoms_choisis()][sexe %chin% sexe_prenom()]
+      d <- d[, .(n = sum(n), `%` = sum(n) / sum(naissances_dpt)), by = dpt]
+      d <- d[, .(dpt, `%`, n)]
+      tidyr::complete(d,
+        dpt = departements$dpt, 
+        fill = list(n = NA, `%` = NA))
+    })
+    
+    
+    ## SORTIES
+    
+    
+    ## Tableau popularité
     
     output$tab_pop <- renderTable({
       data_pop()
     }, striped = TRUE, hover = TRUE, na = "", 
        sanitize.text.function = function(x) x)
     
-    output$texte_evo <- renderUI({
-      text <- paste0("<p>",
-        generate_texte("Évolution des naissances de"),
-        ".</p>")
-      return(HTML(text))
-    })
     
-    data_evo <- reactive({
-      data_nat %>% 
-        filter(annee %in% periode(),
-          prenom %in% prenoms_choisis(),
-          sexe %in% sexe_prenom()
-        ) %>% 
-        mutate(prenom = input$prenom) %>% 
-        group_by(annee, prenom) %>% 
-        summarise(
-          n = sum(n),
-          #n_annee = first(n_annee),
-          `%` = round(n / first(n_annee) * 100, 3)
-        ) %>% 
-        ungroup() %>% 
-        tidyr::complete(prenom, annee = periode(), fill = list(n = 0, `%` = 0))
-    })
+    ## Graphique évolution
     
     output$graph_evo <- renderG2({
       if (input$prenom == "") return(NULL)
-      
       if(nrow(data_evo()) == 0) return(NULL)
       
       if (input$graph_evo_type == "n") {
         var <- sym("n")
         y_title <- "Nombre de naissances"
+        tooltip_template <- '<li>{name}: {value}</li>'
       }
       if (input$graph_evo_type == "prop") {
         var <- sym("%")
         y_title <- "Pourcentage des naissances"
+        tooltip_template <- '<li>{name}: {value}%</li>'
       }
       
       if(length(periode()) == 1) {
         tmp <- data_evo() %>% mutate(annee = as.character(annee))
         g <- g2(tmp, asp(x = annee, y = !!var, color = prenom)) %>% 
-                fig_interval() %>% 
-                gauge_x_discrete(title = "Années", nice = FALSE) %>% 
-                gauge_y_linear(title = y_title, min = 0) %>% 
-                conf_legend(prenom, FALSE)
-        return(g)
+                fig_interval()
+      } else {
+        g <- g2(data_evo(), asp(x = annee, y = !!var, color = prenom)) %>% 
+          fig_line() 
       } 
       
-      g2(data_evo(), asp(x = annee, y = !!var, color = prenom)) %>% 
-        fig_line() %>% 
+      g %>% 
         gauge_x_linear(title = "Années", nice = FALSE) %>% 
         gauge_y_linear(title = y_title, min = 0) %>% 
+        conf_tooltip(itemTpl = tooltip_template) %>% 
         conf_legend(prenom, FALSE)
       
     })
     
-    output$texte_carte <- renderUI({
-      text <- paste0("<p>",
-        generate_texte("Répartition des naissances de"),
-        ".</p>")
-      return(HTML(text))
-    })
-    
-    data_carte <- reactive({
-      data_dpt %>% 
-        filter(annee %in% periode()) %>% 
-        group_by(dpt) %>% 
-        mutate(naissances_dpt = sum(n)) %>% 
-        ungroup() %>% 
-        filter(prenom %in% prenoms_choisis(),
-               sexe %in% sexe_prenom()) %>% 
-        group_by(dpt) %>% 
-        summarise(
-          nb = sum(n),
-          prop = sum(n) / sum(naissances_dpt) * 100
-        ) %>% 
-        select(dpt, prop, nb) %>% 
-        tidyr::complete(dpt = departements$dpt, fill = list(nb = NA, prop = NA))
-    })
+    ## Carte département
     
     output$graph_carte <- renderLeaflet({
       if (input$prenom == "") return(NULL)
       if(nrow(data_carte()) == 0) return(NULL)
+      
       leaflet_dpt(data_carte())
     })
 
     
     ## OUTPUTS COMPARAISON ---------------------------------
     
-    prenoms_comparaison <- reactive({
-      res <- list(prenoms_choisis())
-      for (i in 1:3) {
-        tmp <- input[[paste0("prenoms_comp", i)]]
-        if (!is.null(tmp) && tmp != "") res <- c(res, list(tmp))
-      }
-      if (length(res) == 1) return(NULL)
-      res
+    ## Observers données précédentes
+    
+    observeEvent(input$sexe, {
+      updateSelectInput(
+        session = session,
+        inputId = "sexe_comp1",
+        selected = input$sexe
+      )
+    }, ignoreNULL = FALSE)
+    
+    observe({
+      updateSelectizeInput(
+        session = session,
+        inputId = "prenoms_comp1",
+        selected = prenoms_choisis(),
+        choices = c(NA, liste_prenoms),
+        server = TRUE
+      )
     })
     
-    sexes_comparaison <- reactive({
-      res <- list(sexe_prenom())
-      for (i in 1:3) {
-        tmp <- input[[paste0("prenoms_comp", i)]]
-        if (!is.null(tmp) && tmp != "") {
-          tmp_sexe <- input[[paste0("sexe_comp", i)]]
-          if (!is.null(tmp_sexe) && tmp_sexe == "both") {
-            res <- c(res, list(c("M", "F")))
-          } else if (!is.null(tmp_sexe)) {
-            res <- c(res, list(tmp_sexe))
-          }
-        }
-      }
-      if (length(res) == 1) return(NULL)
-      res  
+    observeEvent(input$periode, {
+      updateSliderInput(
+        session = session,
+        inputId = "periode_comp",
+        value = input$periode
+      )
     })
     
-    generate_texte_comp <- function() {
-      text <- "Comparaison" 
-      if (length(periode()) == 1) {
-        text <- paste0(text, " en ", periode())
+    ## Légendes
+    
+    periode_comp <- reactive({
+      c(input$periode_comp[1], input$periode_comp[2])
+    })
+    
+    label_periode_comp <- reactive({
+      if (length(periode_comp()) == 1) {
+        return(glue(" en {periode_comp()}"))
       } else {
-        text <- paste0(text, " de ", input$periode[1], " à ", input$periode[2])
+        return(glue(" de {input$periode_comp[1]} à {input$periode_comp[2]}"))
       }
-      text
+    })
+    
+    output$legende_evo_comp <- renderUI({
+      HTML(glue("Comparaison du nombre de naissances {label_periode_comp()}"))
+    })
+    
+    output$legende_carte_comp <- renderUI({
+      HTML(glue("Comparaison de la répartition des naissances {label_periode_comp()}"))
+    })
+    
+    ## Données
+    
+    prenoms_comp_indices <- reactive({
+      purrr::keep(1:4, ~{
+        val_x <- input[[glue("prenoms_comp{.x}")]]
+        !is.null(val_x) && val_x != ""
+      })
+    })
+    
+    label_prenom_comp <- function(prenoms, sexe) {
+      text_sexe <- ""
+      if (length(sexe) == 1) {
+        text_sexe <- glue(" ({sexe})")
+      }
+      glue("{prenoms[1]}{text_sexe}")
     }
     
-    output$texte_evo_comp <- renderUI({
-      text <- paste0("<p>",
-        generate_texte_comp(),
-        ".</p>")
-      return(HTML(text))
-    })
+    sexe_prenom_comp <- function(i) {
+      sexe <- input[[glue("sexe_comp{i}")]]
+      if (sexe == "both") return(c("M", "F"))
+      sexe
+    }
+
+    ## Données comparaison évolution
     
     data_evo_comp <- reactive({
       
-      if(is.null(prenoms_comparaison())) return(NULL)
+      if (length(prenoms_comp_indices()) == 0) return(NULL)
       
-      tmp <- data_nat %>% 
-        filter(annee %in% periode()) 
-      tmp <- purrr::map2_dfr(prenoms_comparaison(), sexes_comparaison(), ~{
-        tmp %>% 
-          filter(prenom %in% .x,
-                 sexe %in% .y) %>% 
-          mutate(prenom = .x[1])
+      d <- data_nat[annee %between% periode_comp()]
+      
+      l <- purrr::map(prenoms_comp_indices(), function(i) {
+        prenoms <- input[[glue("prenoms_comp{i}")]]
+        sexe <- sexe_prenom_comp(i)
+        tmp <- d[prenom %chin% prenoms][sexe %chin% sexe]
+        label <- label_prenom_comp(prenoms, sexe)
+        tmp[, prenom := label]
+        tmp <- tmp[, .(n = sum(n), n_annee = data.table::first(n_annee)), by = .(annee, prenom)]
+        tmp[, `%` := n / n_annee * 100]
+        tmp <- tmp[, .(prenom, annee, n, `%`)]
+        tidyr::complete(tmp,
+          prenom = label, annee = seq(periode_comp()[1], periode_comp()[2]), 
+          fill = list(n = 0, `%` = 0))  
       })
 
-      tmp %>% 
-        group_by(annee, prenom) %>% 
-        summarise(
-          n = sum(n),
-          `%` = round(n / first(n_annee) * 100, 3)
-        ) %>% 
-        ungroup() %>% 
-        tidyr::complete(prenom, annee = periode(), fill = list(n = 0, `%` = 0))
+      rbindlist(l)
+
     })
+    
+    ## Données comparaison carte
+    
+    data_carte_comp <- reactive({
+      
+      if (length(prenoms_comp_indices()) == 0) return(NULL)
+      
+      d <- data_dpt[annee %between% periode_comp()]
+      d[, naissances_dpt := sum(n), by = dpt]
+      
+      l <- purrr::map(prenoms_comp_indices(), function(i) {
+        prenoms <- input[[glue("prenoms_comp{i}")]]
+        sexe <- sexe_prenom_comp(i)
+        tmp <- d[prenom %chin% prenoms][sexe %chin% sexe]
+        label <- label_prenom_comp(prenoms, sexe)
+        tmp[, prenom := label]
+        tmp <- tmp[, .(n = sum(n), naissances_dpt = data.table::first(naissances_dpt)), by = .(dpt, prenom)]
+        tmp[, `%` := n / naissances_dpt * 100]
+        tmp <- tmp[, .(prenom, dpt, n, `%`)]
+        tidyr::complete(tmp,
+          prenom = label, dpt = departements$dpt, 
+          fill = list(n = 0, `%` = 0))  
+      })
+      
+      rbindlist(l)
+
+    })
+    
+    ## SORTIES COMPARAISON
+    
+    ## Graphique comparaison évolution
     
     output$graph_evo_comp <- renderG2({
 
-      if (is.null(prenoms_comparaison())) return(NULL)
+      if (length(prenoms_comp_indices()) == 0) return(NULL)
 
-      if(nrow(data_evo_comp()) == 0) return(NULL)
+      if (nrow(data_evo_comp()) == 0) return(NULL)
       
       if (input$graph_evo_comp_type == "n") {
         var <- sym("n")
         y_title <- "Nombre de naissances"
+        tooltip_template <- '<li>{name}: {value}</li>'
       }
       if (input$graph_evo_comp_type == "prop") {
         var <- sym("%")
         y_title <- "Pourcentage des naissances"
+        tooltip_template <- '<li>{name}: {value}%</li>'
       }
       
-      if(length(periode()) == 1) {
-        tmp <- data_evo_comp() %>% ungroup %>% mutate(annee = as.character(annee))
+      if(length(periode_comp()) == 1) {
+        tmp <- data_evo_comp() %>% mutate(annee = as.character(annee))
         g <- g2(tmp, asp(x = annee, y = !!var, color = prenom)) %>% 
-          fig_interval(adjust("dodge")) %>% 
-          gauge_x_discrete(title = "Années", nice = FALSE) %>% 
-          gauge_y_linear(title = y_title, min = 0) %>% 
-          conf_legend(prenom, position = "right")
-        return(g)
-      } 
+          fig_interval(adjust("dodge"))
+      } else {
+        g <- g2(data_evo_comp(), asp(x = annee, y = !!var, color = prenom)) %>% 
+          fig_line()
+      }
       
-      g2(data_evo_comp(), asp(x = annee, y = !!var, color = prenom)) %>% 
-        fig_line() %>% 
+      g %>% 
         gauge_x_linear(title = "Années", nice = FALSE) %>% 
         gauge_y_linear(title = y_title, min = 0) %>% 
+        conf_tooltip(itemTpl = tooltip_template) %>% 
         conf_legend(prenom, position = "right")
     })
     
-    output$texte_carte_comp <- renderUI({
-      text <- paste0("<p>",
-        generate_texte_comp(),
-        ".</p>")
-      return(HTML(text))
-    })
     
-    data_carte_comp <- reactive({
-
-      if(is.null(prenoms_comparaison())) return(NULL)
-
-      tmp <- data_dpt %>% 
-        filter(annee %in% periode()) %>% 
-        group_by(dpt) %>% 
-        mutate(naissances_dpt = sum(n)) %>%
-        ungroup()
-      tmp <- purrr::map2_dfr(prenoms_comparaison(), sexes_comparaison(), ~{
-        tmp %>% 
-          filter(prenom %in% .x,
-            sexe %in% .y) %>% 
-          mutate(prenom = .x[1])
-      })
-
-      tmp %>% 
-        group_by(dpt, prenom) %>% 
-        summarise(
-          nb = sum(n),
-          prop = sum(n) / first(naissances_dpt) * 100
-        ) %>% 
-        ungroup() %>% 
-        tidyr::complete(prenom, dpt = departements$dpt, fill = list(nb = NA, prop = NA))
-
-    })
+    ## Carte comparaison
     
     output$graph_carte_comp <- renderLeaflet({
-      if(is.null(prenoms_comparaison())) return(NULL)
-      if(nrow(data_carte_comp()) == 0) return(NULL)
-      print(data_carte_comp())
+      
+      if (length(prenoms_comp_indices()) == 0) return(NULL)
+      
+      if (nrow(data_carte_comp()) == 0) return(NULL)
+
       leaflet_dpt_comp(data_carte_comp())
     })
     

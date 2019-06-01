@@ -38,24 +38,11 @@ ui <- fluidPage(
                         value = c(1900,2017),
                         step = 1,
                         sep = "",
-                        width = "100%")
+                        width = "90%")
                 ),
-                screenOutput("screen_sexe_similaires"),
+                screenOutput("screen_affine_prenom"),
                 screen(
-                    htmlOutput("texte_pop"),
-                    prettyRadioButtons(
-                        inputId = "tab_pop_type",
-                        label = "", 
-                        choices = c("Les deux sexes" = "both", "Seulement les garçons" = "M", "Seulement les filles" = "F"),
-                        inline = TRUE, 
-                        status = "info",
-                        animation = "jelly",
-                        fill = TRUE
-                    ),
-                    withSpinner(tableOutput("tab_pop"))
-                ),
-                screen(
-                    htmlOutput("texte_evo"),
+                    p(htmlOutput("legende_evo")),
                     prettyRadioButtons(
                         inputId = "graph_evo_type",
                         label = "", 
@@ -68,84 +55,119 @@ ui <- fluidPage(
                     withSpinner(g2Output("graph_evo"))
                 ),
                 screen(
-                    htmlOutput("texte_carte"),
-                    withSpinner((leafletOutput("graph_carte"))
+                    p(htmlOutput("legende_pop")),
+                    prettyRadioButtons(
+                        inputId = "tab_pop_type",
+                        label = "", 
+                        choices = c("Les deux sexes" = "both", "Seulement les garçons" = "M", "Seulement les filles" = "F"),
+                        inline = TRUE, 
+                        status = "info",
+                        animation = "jelly",
+                        fill = TRUE
                     ),
-                    screen(
-                        p("Que souhaitez-vous faire ?"),
-                        div(`data-glide-el`="controls",
-                            tags$button(`data-glide-dir`="={1}", "Recommencer"),
-                            tags$button(`data-glide-dir`=">", "Comparer")
-                        )
-                        ),
-                    screen(
-                        next_condition = "input.prenoms_comp != ''",
-                        p("Comparer avec d'autres prénoms"),
-                        fluidRow(
-                            column(7,
-                                selectizeInput("prenoms_comp1",
-                                    "Prénoms :",
-                                    choices = NULL,
-                                    multiple = TRUE,
-                                    options = selectize_options_multi)
-                                ),
-                            column(5,
-                                selectInput("sexe_comp1",
-                                    "Filter sur le sexe :",
-                                    choices = select_sexe_choices)
-                            )
-                        ),
-                        fluidRow(
-                            column(7,
-                                selectizeInput("prenoms_comp2",
-                                    "Prénoms :",
-                                    choices = NULL,
-                                    multiple = TRUE,
-                                    options = selectize_options_multi)
-                            ),
-                            column(5,
-                                selectInput("sexe_comp2",
-                                    "Filter sur le sexe :",
-                                    choices = select_sexe_choices)
-                            )
-                        ),
-                        fluidRow(
-                            column(7,
-                                selectizeInput("prenoms_comp3",
-                                    "Prénoms :",
-                                    choices = NULL,
-                                    multiple = TRUE,
-                                    options = selectize_options_multi)
-                            ),
-                            column(5,
-                                selectInput("sexe_comp3",
-                                    "Filter sur le sexe :",
-                                    choices = select_sexe_choices)
-                            )
-                        )
-                    ),
-                    screen(
-                        htmlOutput("texte_evo_comp"),
-                        prettyRadioButtons(
-                            inputId = "graph_evo_comp_type",
-                            label = "", 
-                            choices = c("Nombre de naissances" = "n", "Pourcentage des naissances" = "prop"),
-                            inline = TRUE, 
-                            status = "info",
-                            animation = "jelly",
-                            fill = TRUE
-                        ),
-                        withSpinner(g2Output("graph_evo_comp"))
-                    ),
-                    screen(
-                        htmlOutput("texte_carte_comp"),
-                        withSpinner(leafletOutput("graph_carte_comp"))
+                    withSpinner(tableOutput("tab_pop"))
+                ),
+                screen(
+                    p(htmlOutput("legende_carte")),
+                    withSpinner(leafletOutput("graph_carte"))
+                ),
+                screen(
+                    p("Que souhaitez-vous faire ?"),
+                    div(`data-glide-el`="controls",
+                        tags$button(`data-glide-dir`="=1", "Recommencer"),
+                        tags$button(`data-glide-dir`=">", "Comparer")
                     )
+                ),
+                screen(
+                    next_condition = "input.prenoms_comp != ''",
+                    p("Comparer des prénoms"),
+                    fluidRow(
+                        column(7,
+                            selectizeInput("prenoms_comp1",
+                                "Prénoms :",
+                                choices = NULL,
+                                multiple = TRUE,
+                                options = selectize_options_multi)
+                        ),
+                        column(5,
+                            selectInput("sexe_comp1",
+                                "Filter sur le sexe :",
+                                choices = select_sexe_choices)
+                        )
+                    ),
+                    fluidRow(
+                        column(7,
+                            selectizeInput("prenoms_comp2",
+                                "Prénoms :",
+                                choices = NULL,
+                                multiple = TRUE,
+                                options = selectize_options_multi)
+                        ),
+                        column(5,
+                            selectInput("sexe_comp2",
+                                "Filter sur le sexe :",
+                                choices = select_sexe_choices)
+                        )
+                    ),
+                    fluidRow(
+                        column(7,
+                            selectizeInput("prenoms_comp3",
+                                "Prénoms :",
+                                choices = NULL,
+                                multiple = TRUE,
+                                options = selectize_options_multi)
+                        ),
+                        column(5,
+                            selectInput("sexe_comp3",
+                                "Filter sur le sexe :",
+                                choices = select_sexe_choices)
+                        )
+                    ),
+                    fluidRow(
+                        column(7,
+                            selectizeInput("prenoms_comp4",
+                                "Prénoms :",
+                                choices = NULL,
+                                multiple = TRUE,
+                                options = selectize_options_multi)
+                        ),
+                        column(5,
+                            selectInput("sexe_comp4",
+                                "Filter sur le sexe :",
+                                choices = select_sexe_choices)
+                        )
+                    ),
+                    sliderInput("periode_comp",
+                        "Période :",
+                        min = 1900,
+                        max = 2017,
+                        value = c(1900,2017),
+                        step = 1,
+                        sep = "",
+                        width = "90%")
+                ),
+                screen(
+                    p(htmlOutput("legende_evo_comp")),
+                    prettyRadioButtons(
+                        inputId = "graph_evo_comp_type",
+                        label = "", 
+                        choices = c("Nombre de naissances" = "n", "Pourcentage des naissances" = "prop"),                           
+                        inline = TRUE, 
+                        status = "info",
+                        animation = "jelly",
+                        fill = TRUE
+                    ),
+                    withSpinner(g2Output("graph_evo_comp"))
+                ),
+                screen(
+                    p(htmlOutput("legende_carte_comp")),
+                    withSpinner(leafletOutput("graph_carte_comp"))
                 )
             )
         )
     )
 )
+
 
 
 

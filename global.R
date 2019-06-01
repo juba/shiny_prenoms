@@ -3,13 +3,18 @@ library(rlang)
 library(leaflet)
 library(sf)
 library(g2r)
+library(glue)
+library(data.table)
 
 load(file = "data/prenoms_2017.Rdata")
 load(file = "data/departements_2017.Rdata")
 
+data_nat <- data.table(data_nat, key = "prenom")
+data_dpt <- data.table(data_dpt, key = "prenom")
 
 selectize_options <- list(selectOnTab = TRUE, openOnFocus = FALSE, maxOptions = 100)
 selectize_options_multi <- c(selectize_options, list(plugins = list("remove_button")))
+
 select_sexe_choices <- c("Garder les deux sexes" = "both", 
   "Seulement les garçons" = "M", 
   "Seulement les filles" = "F")
@@ -18,12 +23,12 @@ leaflet_dpt <- function(data) {
   
   data <- departements %>% 
     left_join(data, by = "dpt") %>% 
-    mutate(label = paste0("<strong>", nom, "</strong><br />",
-      "Nombre de naissances : ", nb, "<br />",
-      ifelse(!is.na(prop), paste("Pourcentage des naissances : ", 
-        round(prop, 3), "%<br />"), "")))
+    mutate(
+      label_pourcentage = ifelse(!is.na(`%`), glue("Pourcentage des naissances : {round(`%`, 3)}%<br />"), ""),
+      label = glue("<strong>{nom}</strong><br />Nombre de naissances : {n}<br />{label_pourcentage}")
+    )
 
-  domain <- if (all(is.na(data$prop))) NULL else data$prop
+  domain <- if (all(is.na(data$`%`))) NULL else data$`%`
   pal <- colorNumeric("YlGnBu", domain)
   highlight_options <- highlightOptions(color = "#F99800", weight = 2,
     bringToFront = TRUE)
@@ -35,10 +40,10 @@ leaflet_dpt <- function(data) {
       labelOptions = label_options,
       color = "#444444", weight = 1, smoothFactor = 1,
       opacity = 1.0, fillOpacity = 0.9,
-      fillColor = ~pal(prop),
+      fillColor = ~pal(`%`),
       highlightOptions =  highlight_options) %>%
     addLegend("bottomright",
-      pal = pal, values = data$prop,
+      pal = pal, values = data$`%`,
       title = "(en %)",
       opacity = 1,
       na.label = "NA")
@@ -60,11 +65,12 @@ leaflet_dpt_comp <- function(data) {
       left_join(data, by = "dpt") %>% 
       mutate(prenom = ifelse(is.na(prenom), key, prenom)) %>% 
       mutate(label = paste0("<strong>", nom, "</strong><br />",
-        "Nombre de naissances : ", nb, "<br />",
-        "Pourcentage des naissances : ", round(prop, 3), "%<br />"))
+        "Nombre de naissances : ", n, "<br />",
+        "Pourcentage des naissances : ", round(`%`, 3), "%<br />"))
   })
   
-  pal <- colorNumeric("YlGnBu", data$prop)
+  domain <- if (all(is.na(data$`%`))) NULL else data$`%`
+  pal <- colorNumeric("YlGnBu", domain)
   highlight_options <- highlightOptions(color = "#F99800", weight = 2,
     bringToFront = TRUE)
   label_options <- list(opacity = 0.9, offset = c(0, -40), direction = "top")
@@ -79,13 +85,13 @@ leaflet_dpt_comp <- function(data) {
         labelOptions = label_options,
         color = "#444444", weight = 1, smoothFactor = 1,
         opacity = 1.0, fillOpacity = 0.9,
-        fillColor = ~pal(prop),
+        fillColor = ~pal(`%`),
         highlightOptions =  highlight_options)
   }
   
   map <- map %>% 
     addLegend("bottomright",
-      pal = pal, values = data$prop,
+      pal = pal, values = data$`%`,
       title = "(en %)",
       opacity = 1,
       na.label = "NA") %>% 
