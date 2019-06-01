@@ -347,9 +347,9 @@ server <- function(input, output, session) {
       d <- data_nat[annee %between% periode_comp()]
       l <- purrr::map(prenoms_comp_indices(), function(i) {
         prenoms <- input[[glue("prenoms_comp{i}")]]
-        sexe <- sexe_prenom_comp(i)
-        tmp <- d[prenom %chin% prenoms][sexe %chin% sexe]
-        label <- label_prenom_comp(prenoms, sexe)
+        tmp_sexe <- sexe_prenom_comp(i)
+        tmp <- d[prenom %chin% prenoms][sexe %chin% tmp_sexe]
+        label <- label_prenom_comp(prenoms, tmp_sexe)
         tmp[, prenom := label]
         tmp <- tmp[, .(n = sum(n), n_annee = data.table::first(n_annee)), by = .(annee, prenom)]
         tmp[, `%` := n / n_annee * 100]
