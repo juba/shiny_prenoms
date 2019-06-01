@@ -19,6 +19,12 @@ select_sexe_choices <- c("Garder les deux sexes" = "both",
   "Seulement les garçons" = "M", 
   "Seulement les filles" = "F")
 
+
+highlight_options <- highlightOptions(color = "#F99800", weight = 2,
+  bringToFront = TRUE)
+label_options <- list(opacity = 0.9, offset = c(0, -40), direction = "top")
+
+
 leaflet_dpt <- function(data) {
   
   data <- departements %>% 
@@ -29,24 +35,25 @@ leaflet_dpt <- function(data) {
     )
 
   domain <- if (all(is.na(data$`%`))) NULL else data$`%`
-  pal <- colorNumeric("YlGnBu", domain)
-  highlight_options <- highlightOptions(color = "#F99800", weight = 2,
-    bringToFront = TRUE)
-  label_options <- list(opacity = 0.9, offset = c(0, -40), direction = "top")
+  pal <- colorNumeric("viridis", domain)
   
   leaflet(data) %>% 
-    #addProviderTiles(providers$CartoDB.Positron) %>% 
     addPolygons(label = ~purrr::map(label, htmltools::HTML),
       labelOptions = label_options,
       color = "#444444", weight = 1, smoothFactor = 1,
       opacity = 1.0, fillOpacity = 0.9,
       fillColor = ~pal(`%`),
       highlightOptions =  highlight_options) %>%
-    addLegend("bottomright",
+    addLegend("topright",
       pal = pal, values = data$`%`,
-      title = "(en %)",
+      bins = 6,
       opacity = 1,
-      na.label = "NA")
+      na.label = "NA",
+      labFormat = labelFormat(
+        suffix = "%",
+        digits = 4
+      )
+    )
 
 }
 
@@ -70,11 +77,8 @@ leaflet_dpt_comp <- function(data) {
   })
   
   domain <- if (all(is.na(data$`%`))) NULL else data$`%`
-  pal <- colorNumeric("YlGnBu", domain)
-  highlight_options <- highlightOptions(color = "#F99800", weight = 2,
-    bringToFront = TRUE)
-  label_options <- list(opacity = 0.9, offset = c(0, -40), direction = "top")
-  
+  pal <- colorNumeric("viridis", domain)
+
   map <- leaflet()
   
   for(i in seq_along(datas)) {
@@ -90,11 +94,16 @@ leaflet_dpt_comp <- function(data) {
   }
   
   map <- map %>% 
-    addLegend("bottomright",
+    addLegend("topright",
       pal = pal, values = data$`%`,
-      title = "(en %)",
+      bins = 4,
       opacity = 1,
-      na.label = "NA") %>% 
+      na.label = "NA",
+      labFormat = labelFormat(
+        suffix = "%",
+        digits = 4
+      )
+    ) %>% 
     addLayersControl(
       baseGroups = as.character(keys),
       options = layersControlOptions(collapsed = FALSE)
