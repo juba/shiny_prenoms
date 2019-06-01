@@ -91,8 +91,8 @@ server <- function(input, output, session) {
     })
     
     label_periode <- reactive({
-      if (length(periode()) == 1) {
-        return(glue(" en {periode()}"))
+      if (periode()[1] == periode()[2]) {
+        return(glue(" en {periode()[1]}"))
       } else {
         return(glue(" de {input$periode[1]} à {input$periode[2]}"))
       }
@@ -199,7 +199,8 @@ server <- function(input, output, session) {
       d <- data_dpt_periode()
       d[, naissances_dpt := sum(n), by = dpt]
       d <- d[prenom %chin% prenoms_choisis()][sexe %chin% sexe_prenom()]
-      d <- d[, .(n = sum(n), `%` = sum(n) / sum(naissances_dpt)), by = dpt]
+      d <- d[, .(n = sum(n), naissances_dpt = data.table::first(naissances_dpt)), by = dpt]
+      d[, `%` := n / naissances_dpt * 100]
       d <- d[, .(dpt, `%`, n)]
       tidyr::complete(d,
         dpt = departements$dpt, 
@@ -222,7 +223,7 @@ server <- function(input, output, session) {
     
     output$graph_evo <- renderG2({
       if (input$prenom == "") return(NULL)
-      if(nrow(data_evo()) == 0) return(NULL)
+      if (nrow(data_evo()) == 0) return(NULL)
       
       if (input$graph_evo_type == "n") {
         var <- sym("n")
@@ -234,18 +235,18 @@ server <- function(input, output, session) {
         y_title <- "Pourcentage des naissances"
         tooltip_template <- '<li>{name}: {value}%</li>'
       }
-      
-      if(length(periode()) == 1) {
+      if (periode()[1] == periode()[2]) {
         tmp <- data_evo() %>% mutate(annee = as.character(annee))
         g <- g2(tmp, asp(x = annee, y = !!var, color = prenom)) %>% 
-                fig_interval()
+          fig_interval() %>% 
+          gauge_x_discrete(title = "Années", nice = TRUE)
       } else {
         g <- g2(data_evo(), asp(x = annee, y = !!var, color = prenom)) %>% 
-          fig_line() 
+          fig_line() %>% 
+          gauge_x_linear(title = "Années", nice = FALSE)
       } 
       
       g %>% 
-        gauge_x_linear(title = "Années", nice = FALSE) %>% 
         gauge_y_linear(title = y_title, min = 0) %>% 
         conf_tooltip(itemTpl = tooltip_template) %>% 
         conf_legend(prenom, FALSE)
@@ -299,8 +300,8 @@ server <- function(input, output, session) {
     })
     
     label_periode_comp <- reactive({
-      if (length(periode_comp()) == 1) {
-        return(glue(" en {periode_comp()}"))
+      if (periode_comp()[1] == periode_comp()[2]) {
+        return(glue(" en {periode_comp()[1]}"))
       } else {
         return(glue(" de {input$periode_comp[1]} à {input$periode_comp[2]}"))
       }
@@ -344,7 +345,6 @@ server <- function(input, output, session) {
       if (length(prenoms_comp_indices()) == 0) return(NULL)
       
       d <- data_nat[annee %between% periode_comp()]
-      
       l <- purrr::map(prenoms_comp_indices(), function(i) {
         prenoms <- input[[glue("prenoms_comp{i}")]]
         sexe <- sexe_prenom_comp(i)
@@ -358,7 +358,6 @@ server <- function(input, output, session) {
           prenom = label, annee = seq(periode_comp()[1], periode_comp()[2]), 
           fill = list(n = 0, `%` = 0))  
       })
-
       rbindlist(l)
 
     })
@@ -397,7 +396,6 @@ server <- function(input, output, session) {
     output$graph_evo_comp <- renderG2({
 
       if (length(prenoms_comp_indices()) == 0) return(NULL)
-
       if (nrow(data_evo_comp()) == 0) return(NULL)
       
       if (input$graph_evo_comp_type == "n") {
@@ -411,17 +409,18 @@ server <- function(input, output, session) {
         tooltip_template <- '<li>{name}: {value}%</li>'
       }
       
-      if(length(periode_comp()) == 1) {
+      if (periode_comp()[1] == periode_comp()[2]) {
         tmp <- data_evo_comp() %>% mutate(annee = as.character(annee))
         g <- g2(tmp, asp(x = annee, y = !!var, color = prenom)) %>% 
-          fig_interval(adjust("dodge"))
+          fig_interval(adjust("dodge")) %>% 
+          gauge_x_discrete(title = "Années", nice = FALSE)
       } else {
         g <- g2(data_evo_comp(), asp(x = annee, y = !!var, color = prenom)) %>% 
-          fig_line()
+          fig_line() %>% 
+          gauge_x_linear(title = "Années", nice = FALSE)
       }
       
       g %>% 
-        gauge_x_linear(title = "Années", nice = FALSE) %>% 
         gauge_y_linear(title = y_title, min = 0) %>% 
         conf_tooltip(itemTpl = tooltip_template) %>% 
         conf_legend(prenom, position = "right")
@@ -433,10 +432,10 @@ server <- function(input, output, session) {
     output$graph_carte_comp <- renderLeaflet({
       
       if (length(prenoms_comp_indices()) == 0) return(NULL)
-      
       if (nrow(data_carte_comp()) == 0) return(NULL)
 
       leaflet_dpt_comp(data_carte_comp())
+      
     })
     
     
