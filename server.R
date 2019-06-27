@@ -26,19 +26,21 @@ server <- function(input, output, session) {
     
     output$screen_affine_prenom <- renderUI({
       if (input$prenom == "") return(NULL)
-      out <- NULL
+      out <- h3("Précisions sur le prénom choisi")
       if (nb_sexes_prenom() == 2) {
         out <- list(out,
+          p("Ce prénom existe pour des naissances des deux sexes."),
           selectInput("sexe",
-            "Filter sur le sexe :",
+            NULL,
             choices = select_sexe_choices)
         )
       }
       if (length(prenoms_similaires()) > 0) {
-        out <- c(out, 
+        out <- list(out, 
+          p("Des prénoms similaires ont été trouvés. Sélectionnez ceux que vous souhaitez regrouper avec le prénom initial."),
           list(checkboxGroupInput(
             "prenoms_similaires",
-            "Regrouper avec",
+            NULL,
             choices = prenoms_similaires()
           )
         ))
@@ -99,15 +101,15 @@ server <- function(input, output, session) {
     })
     
     output$legende_pop <- renderUI({
-      HTML(glue("Popularité de <strong>{label_prenom()}</strong> {label_periode()}."))
+      HTML(glue("Popularité de {label_prenom()} {label_periode()}"))
     })
     
     output$legende_evo <- renderUI({
-      HTML(glue("Évolution des naissances de <strong>{label_prenom()}</strong> {label_periode()}."))
+      HTML(glue("Évolution des naissances de {label_prenom()} {label_periode()}"))
     })
 
     output$legende_carte <- renderUI({
-      HTML(glue("Répartition des naissances de <strong>{label_prenom()}</strong> {label_periode()}."))
+      HTML(glue("Répartition des naissances de {label_prenom()} {label_periode()}"))
     })
     
     ## DONNÉES

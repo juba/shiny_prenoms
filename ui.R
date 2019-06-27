@@ -2,30 +2,52 @@ library(shinyWidgets)
 library(shinythemes)
 library(shinyglide)
 library(shinycssloaders)
-devtools::load_all("~/r/packages/shinyglide/")
 
 options(spinner.type = 7)
 options(spinner.color = "#999999")
+
+controls <- glideControls(
+    prevButton(),
+    list(
+        nextButton(),
+        lastButton(
+            class="btn btn-success",
+            href="https://juba.github.io/shinyglide",
+            "Go to project website"
+        )
+    )
+)
 
 
 ui <- fluidPage(
     title = "Prénoms 1900-2017",
     theme = "shiny_prenoms.css",
     fluidRow(
-        column(8, offset = 2,
+        div(class="glide-wrapper",
             glide(
-                height = "600px",
-                next_label = 'Suivant <span class="glyphicon glyphicon-chevron-right" aria-hidden="true"></span>',
-                previous_label = '<span class="glyphicon glyphicon-chevron-left" aria-hidden="true"></span> Précédent',
-                loading_label = "Chargement",
+                height = "650px",
+                next_label = paste(
+                    "Suivant",
+                    shiny::icon("chevron-right", lib = "glyphicon")
+                ),
+                previous_label = paste(
+                    shiny::icon("chevron-left", lib = "glyphicon"),
+                    "Précédent"
+                ),
+                loading_label = span(
+                    span(class = "shinyglide-spinner"),
+                    span("Chargement")
+                ),
                 disable_type = "disable",
+                custom_controls = controls,
                 
                 screen(
-                    h2("Prénoms donnés à la naissance en France"),
-                    h3("1900-2017")
+                    h1("Prénoms donnés à la naissance en France"),
+                    h2("1900-2017")
                 ),
                 screen(
                     next_condition = "input.prenom != ''",
+                    h3("Choisissez un prénom et une période"),
                     selectizeInput("prenom",
                         "Prénom :",
                         choices = NULL,
@@ -42,7 +64,7 @@ ui <- fluidPage(
                 ),
                 screenOutput("screen_affine_prenom"),
                 screen(
-                    p(htmlOutput("legende_evo")),
+                    h4(htmlOutput("legende_evo")),
                     prettyRadioButtons(
                         inputId = "graph_evo_type",
                         label = "", 
@@ -55,17 +77,19 @@ ui <- fluidPage(
                     withSpinner(g2Output("graph_evo"))
                 ),
                 screen(
-                    p(htmlOutput("legende_pop")),
-                    prettyRadioButtons(
-                        inputId = "tab_pop_type",
-                        label = "", 
-                        choices = c("Les deux sexes" = "both", "Seulement les garçons" = "M", "Seulement les filles" = "F"),
-                        inline = TRUE, 
-                        status = "info",
-                        animation = "jelly",
-                        fill = TRUE
-                    ),
-                    withSpinner(tableOutput("tab_pop"))
+                    h4(htmlOutput("legende_pop")),
+                    div(class="center-block",
+                        prettyRadioButtons(
+                            inputId = "tab_pop_type",
+                            label = "", 
+                            choices = c("Les deux sexes" = "both", "Seulement les garçons" = "M", "Seulement les filles" = "F"),
+                            inline = TRUE, 
+                            status = "info",
+                            animation = "jelly",
+                            fill = TRUE
+                        ),
+                        withSpinner(tableOutput("tab_pop"))
+                    )
                 ),
                 screen(
                     p(htmlOutput("legende_carte")),
