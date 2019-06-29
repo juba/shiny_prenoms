@@ -66,7 +66,9 @@ h5 {
   background-color: #FFF;
   padding: 2em;
 }
-
+.glide__slide {
+  overflow-y: auto;
+}
 .glide__slide img {
   max-width: 100%;
 }
