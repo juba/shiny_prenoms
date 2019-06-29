@@ -26,6 +26,7 @@ server <- function(input, output, session) {
     
     output$screen_affine_prenom <- renderUI({
       if (input$prenom == "") return(NULL)
+      if (nb_sexes_prenom() == 1 && length(prenoms_similaires()) == 0) return(NULL)
       out <- h3("Précisions sur le prénom choisi")
       if (nb_sexes_prenom() == 2) {
         out <- list(out,
