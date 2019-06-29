@@ -1,5 +1,4 @@
 library(shinyWidgets)
-library(shinythemes)
 library(shinyglide)
 library(shinycssloaders)
 
