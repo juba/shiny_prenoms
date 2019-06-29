@@ -110,7 +110,7 @@ server <- function(input, output, session) {
     })
 
     output$legende_carte <- renderUI({
-      HTML(glue("Répartition des naissances de {label_prenom()} {label_periode()}"))
+      HTML(glue("Proportion des naissances de {label_prenom()} par département {label_periode()}"))
     })
     
     ## DONNÉES
@@ -172,6 +172,8 @@ server <- function(input, output, session) {
           tab <- rbindlist(l, use.names = FALSE)
         }
       }
+      tab[, Naissances := prettyNum(Naissances, HTML("&thinsp;"))]
+      tab[, Naissances := ifelse(Naissances == "NA", "", Naissances)]
     
       tab[Prénom == input$prenom, Prénom := glue("<strong>{Prénom}</strong>")]
     })
@@ -187,7 +189,7 @@ server <- function(input, output, session) {
       d <- d[prenom %chin% prenoms_choisis()][sexe %chin% sexe_prenom()]
       d[, prenom := input$prenom]
       d <- d[, .(n = sum(n), n_annee = data.table::first(n_annee)), by = .(annee, prenom)]
-      d[, `%` := n / n_annee * 100]
+      d[, `%` := round(n / n_annee * 100, 4)]
       tidyr::complete(d, 
         prenom, annee = seq(periode()[1], periode()[2]), 
         fill = list(n = 0, `%` = 0))
@@ -219,7 +221,8 @@ server <- function(input, output, session) {
     output$tab_pop <- renderTable({
       data_pop()
     }, striped = TRUE, hover = TRUE, na = "", 
-       sanitize.text.function = function(x) x)
+       sanitize.text.function = function(x) x,
+       align = "???r?")
     
     
     ## Graphique évolution
@@ -355,7 +358,7 @@ server <- function(input, output, session) {
         label <- label_prenom_comp(prenoms, tmp_sexe)
         tmp[, prenom := label]
         tmp <- tmp[, .(n = sum(n), n_annee = data.table::first(n_annee)), by = .(annee, prenom)]
-        tmp[, `%` := n / n_annee * 100]
+        tmp[, `%` := round(n / n_annee * 100, 4)]
         tmp <- tmp[, .(prenom, annee, n, `%`)]
         tidyr::complete(tmp,
           prenom = label, annee = seq(periode_comp()[1], periode_comp()[2]), 
