@@ -35,7 +35,7 @@ leaflet_dpt <- function(data) {
     )
 
   domain <- if (all(is.na(data$`%`))) NULL else data$`%`
-  pal <- colorNumeric("viridis", domain)
+  pal <- colorNumeric("PuRd", domain)
   
   leaflet(data) %>% 
     addPolygons(label = ~purrr::map(label, htmltools::HTML),
@@ -77,7 +77,7 @@ leaflet_dpt_comp <- function(data) {
   })
   
   domain <- if (all(is.na(data$`%`))) NULL else data$`%`
-  pal <- colorNumeric("viridis", domain)
+  pal <- colorNumeric("PuRd", domain)
 
   map <- leaflet()
   
