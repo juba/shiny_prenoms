@@ -1,18 +1,18 @@
 @font-face {
   font-family: "Roboto Slab";
-  src: url("RobotoSlab-Light.ttf");
+  src: url("fonts/RobotoSlab-Light.ttf");
   font-weight: 300;
 }
 
 @font-face {
   font-family: "Roboto";
-  src: url("Roboto-Regular.ttf");
+  src: url("fonts/Roboto-Regular.ttf");
   font-weight: 400;
 }
 
 @font-face {
   font-family: "Roboto Condensed";
-  src: url("RobotoCondensed-Regular.ttf");
+  src: url("fonts/RobotoCondensed-Regular.ttf");
   font-weight: 400;
 }
 
@@ -26,6 +26,10 @@ body {
 h1, h2, h3 {
   font-family: "Roboto Slab", serif;
   font-weight: 300;
+}
+
+h4, h5 {
+  font-family: "Roboto Condensed";
 }
 
 h1 {
@@ -45,8 +49,11 @@ h3 {
 }
 
 h4 {
-  font-family: "Roboto Condensed";
   font-size: 1.8em;
+}
+
+h5 {
+  font-size: 1.3em;
 }
 
 .container-fluid {
@@ -93,3 +100,18 @@ h4 {
   margin-left: auto;
   margin-right: auto;
 }
+
+.nav-buttons {
+  text-align: center;
+  margin-top: 15%;
+}
+
+.nav-buttons button {
+  font-family: "Roboto Condensed";
+  font-size: 1.5em;
+  margin-top: 2em;
+  padding: 1em;
+}
+
+
+

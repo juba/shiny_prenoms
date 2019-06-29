@@ -7,14 +7,16 @@ options(spinner.type = 7)
 options(spinner.color = "#999999")
 
 controls <- glideControls(
-    prevButton(),
     list(
-        nextButton(),
-        lastButton(
-            class="btn btn-success",
-            href="https://juba.github.io/shinyglide",
-            "Go to project website"
-        )
+        actionButton(
+            inputId = "about",
+            class = "btn btn-success first-screen",
+            label = "À propos"
+        ),
+        prevButton()
+    ),
+    list(
+        nextButton()
     )
 )
 
@@ -98,8 +100,24 @@ ui <- fluidPage(
                 screen(
                     h3("Que souhaitez-vous faire ?"),
                     div(`data-glide-el`="controls",
-                        tags$button(`data-glide-dir`="=1", "Recommencer"),
-                        tags$button(`data-glide-dir`=">", "Comparer")
+                         class = "nav-buttons",
+                         tags$button(
+                            `data-glide-dir`=">", 
+                            class = "btn btn-info btn-compare",
+                            HTML(paste(
+                                shiny::icon("signal", lib = "glyphicon"),
+                                "<strong>Comparer</strong> ce prénom avec d'autres"
+                            ))
+                         ),
+                         tags$br(),
+                         tags$button(
+                            `data-glide-dir`="=1", 
+                            class = "btn btn-warning btn-restart",
+                            HTML(paste(
+                                shiny::icon("repeat", lib = "glyphicon"),
+                                "<strong>Recommencer</strong>"
+                            ))
+                        )
                     )
                 ),
                 screen(
