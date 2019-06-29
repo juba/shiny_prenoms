@@ -458,7 +458,7 @@ server <- function(input, output, session) {
           p(HTML("Ces données présentent certaines limites, certains prénoms notamment n'apparaissent pas si ils ont été donnés trop peu de fois sur une période ou dans un département donné. Pour plus de détails, vous pouvez vous référer à la <a href='https://www.insee.fr/fr/statistiques/2540004'>documentation</a> fournie par l'INSEE.")),
           h5("Code"),
           p(HTML("Cette application a été développée avec <a href='https://www.r-project.org/'>R</a> et <a href='https://shiny.rstudio.com'>Shiny</a>. Elle utilise notamment le package <a href='https://juba.github.io/shinyglide/'>shinyglide</a>.")),
-          p(HTML("Le code est disponible <a href=''>sur GitHub</a>.")),
+          p(HTML("Le code est disponible <a href='https://github.com/juba/shiny_prenoms'>sur GitHub</a>.")),
           p(HTML("Auteur&nbsp;: <a href='https://twitter.com/lapply/'>Julien Barnier</a>."))
         )
       )
