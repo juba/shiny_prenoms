@@ -123,56 +123,56 @@ ui <- fluidPage(
                     next_condition = "input.prenoms_comp != ''",
                     h3("Comparer des prénoms"),
                     fluidRow(
-                        column(7,
+                        div(class = "col-xs-7",
                             selectizeInput("prenoms_comp1",
                                 "Prénoms 1 :",
                                 choices = NULL,
                                 multiple = TRUE,
                                 options = selectize_options_multi)
                         ),
-                        column(5,
+                        div(class = "col-xs-5",
                             selectInput("sexe_comp1",
                                 "Filter sur le sexe :",
                                 choices = select_sexe_choices)
                         )
                     ),
                     fluidRow(
-                        column(7,
+                        div(class = "col-xs-7",
                             selectizeInput("prenoms_comp2",
                                 "Prénoms 2 :",
                                 choices = NULL,
                                 multiple = TRUE,
                                 options = selectize_options_multi)
                         ),
-                        column(5,
+                        div(class = "col-xs-5",
                             selectInput("sexe_comp2",
                                 "Filter sur le sexe :",
                                 choices = select_sexe_choices)
                         )
                     ),
                     fluidRow(
-                        column(7,
+                        div(class = "col-xs-7",
                             selectizeInput("prenoms_comp3",
                                 "Prénoms 3 :",
                                 choices = NULL,
                                 multiple = TRUE,
                                 options = selectize_options_multi)
                         ),
-                        column(5,
+                        div(class = "col-xs-5",
                             selectInput("sexe_comp3",
                                 "Filter sur le sexe :",
                                 choices = select_sexe_choices)
                         )
                     ),
                     fluidRow(
-                        column(7,
+                        div(class = "col-xs-7",
                             selectizeInput("prenoms_comp4",
                                 "Prénoms 4 :",
                                 choices = NULL,
                                 multiple = TRUE,
                                 options = selectize_options_multi)
                         ),
-                        column(5,
+                        div(class = "col-xs-5",
                             selectInput("sexe_comp4",
                                 "Filter sur le sexe :",
                                 choices = select_sexe_choices)

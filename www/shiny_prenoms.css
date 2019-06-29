@@ -67,7 +67,7 @@ h5 {
   padding: 2em;
 }
 .glide__slide {
-  overflow-y: auto;
+  /* overflow-y: auto; */
 }
 .glide__slide img {
   max-width: 100%;
