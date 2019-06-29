@@ -247,9 +247,11 @@ server <- function(input, output, session) {
           fig_interval() %>% 
           gauge_x_discrete(title = "Années", nice = TRUE)
       } else {
+        tick_interval <- NULL
+        if (periode()[2] - periode()[1] <= 5) tick_interval <- 1
         g <- g2(data_evo(), asp(x = annee, y = !!var, color = prenom)) %>% 
           fig_line() %>% 
-          gauge_x_linear(title = "Années", nice = FALSE)
+          gauge_x_linear(title = "Années", nice = FALSE, tick_interval = tick_interval)
       } 
       
       g %>% 
@@ -421,9 +423,11 @@ server <- function(input, output, session) {
           fig_interval(adjust("dodge")) %>% 
           gauge_x_discrete(title = "Années", nice = FALSE)
       } else {
+        tick_interval <- NULL
+        if (periode()[2] - periode()[1] <= 5) tick_interval <- 1
         g <- g2(data_evo_comp(), asp(x = annee, y = !!var, color = prenom)) %>% 
           fig_line() %>% 
-          gauge_x_linear(title = "Années", nice = FALSE)
+          gauge_x_linear(title = "Années", nice = FALSE, tick_interval = tick_interval)
       }
       
       g %>% 
