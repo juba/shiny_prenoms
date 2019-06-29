@@ -92,11 +92,11 @@ ui <- fluidPage(
                     )
                 ),
                 screen(
-                    p(htmlOutput("legende_carte")),
-                    withSpinner(leafletOutput("graph_carte"))
+                    h4(htmlOutput("legende_carte")),
+                    withSpinner(leafletOutput("graph_carte", height = 600))
                 ),
                 screen(
-                    p("Que souhaitez-vous faire ?"),
+                    h3("Que souhaitez-vous faire ?"),
                     div(`data-glide-el`="controls",
                         tags$button(`data-glide-dir`="=1", "Recommencer"),
                         tags$button(`data-glide-dir`=">", "Comparer")
@@ -104,11 +104,11 @@ ui <- fluidPage(
                 ),
                 screen(
                     next_condition = "input.prenoms_comp != ''",
-                    p("Comparer des prénoms"),
+                    h3("Comparer des prénoms"),
                     fluidRow(
                         column(7,
                             selectizeInput("prenoms_comp1",
-                                "Prénoms :",
+                                "Prénoms 1 :",
                                 choices = NULL,
                                 multiple = TRUE,
                                 options = selectize_options_multi)
@@ -122,7 +122,7 @@ ui <- fluidPage(
                     fluidRow(
                         column(7,
                             selectizeInput("prenoms_comp2",
-                                "Prénoms :",
+                                "Prénoms 2 :",
                                 choices = NULL,
                                 multiple = TRUE,
                                 options = selectize_options_multi)
@@ -136,7 +136,7 @@ ui <- fluidPage(
                     fluidRow(
                         column(7,
                             selectizeInput("prenoms_comp3",
-                                "Prénoms :",
+                                "Prénoms 3 :",
                                 choices = NULL,
                                 multiple = TRUE,
                                 options = selectize_options_multi)
@@ -150,7 +150,7 @@ ui <- fluidPage(
                     fluidRow(
                         column(7,
                             selectizeInput("prenoms_comp4",
-                                "Prénoms :",
+                                "Prénoms 4 :",
                                 choices = NULL,
                                 multiple = TRUE,
                                 options = selectize_options_multi)
@@ -171,7 +171,7 @@ ui <- fluidPage(
                         width = "90%")
                 ),
                 screen(
-                    p(htmlOutput("legende_evo_comp")),
+                    h4(htmlOutput("legende_evo_comp")),
                     prettyRadioButtons(
                         inputId = "graph_evo_comp_type",
                         label = "", 
@@ -184,8 +184,8 @@ ui <- fluidPage(
                     withSpinner(g2Output("graph_evo_comp"))
                 ),
                 screen(
-                    p(htmlOutput("legende_carte_comp")),
-                    withSpinner(leafletOutput("graph_carte_comp"))
+                    h4(htmlOutput("legende_carte_comp")),
+                    withSpinner(leafletOutput("graph_carte_comp", height = 600))
                 )
             )
         )
