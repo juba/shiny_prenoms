@@ -45,7 +45,7 @@ leaflet_dpt <- function(data) {
       fillColor = ~pal(`%`),
       highlightOptions =  highlight_options) %>%
     addLegend("topright",
-      title = "Pourcentage des<br>naissances dans<br>le département",
+      title = "Pourcentage des naissances dans le département",
       pal = pal, values = data$`%`,
       bins = 6,
       opacity = 1,
@@ -96,7 +96,7 @@ leaflet_dpt_comp <- function(data) {
   
   map <- map %>% 
     addLegend("topright",
-      title = "Pourcentage des<br>naissances dans<br>le département",
+      title = "Pourcentage des naissances dans le département",
       pal = pal, values = data$`%`,
       bins = 4,
       opacity = 1,

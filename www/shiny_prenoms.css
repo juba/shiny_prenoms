@@ -96,6 +96,7 @@ h5 {
 
 .legend.leaflet-control {
   font-size: 12px;
+  max-width: 9em;
 }
 
 .table {
