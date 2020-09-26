@@ -4,7 +4,7 @@ library(tidyverse)
 
 # devtools::install_github("antuki/CARTElette/CARTElette@RPackage")
 library(CARTElette)
-departements_orig <- loadMap(COG = 2018, nivsupra = "DEP")
+departements_orig <- charger_carte(COG = 2019, nivsupra = "DEP")
 departements <- departements_orig %>% rename(dpt = DEP)
 ## Fusion de la Corse
 library(sf)
@@ -17,12 +17,10 @@ departements <- departements %>%
   rmapshaper::ms_simplify(keep = 0.03) %>% 
   st_transform(crs = 4326)
 
-
-
-save(departements, file = "data/departements_2018.Rdata")
+save(departements, file = "data/departements_2019.Rdata")
 
 ## Données prénoms départementales
-data_dpt <- read_csv2("data/raw/dpt2018.csv")
+data_dpt <- read_csv2("data/raw/dpt2019.csv")
 data_dpt <- data_dpt %>% 
   rename(prenom = preusuel,
     annee = annais,
@@ -37,7 +35,7 @@ data_dpt <- data_dpt %>%
     sexe = as.character(sexe))
 
 ## Données prénoms nationales
-data_nat <- read_csv2("data/raw/nat2018.csv")
+data_nat <- read_csv2("data/raw/nat2019.csv")
 data_nat <- data_nat %>% 
   rename(prenom = preusuel,
     annee = annais,
@@ -67,5 +65,5 @@ sexes_prenoms <- data_nat %>%
   count(prenom, sexe) %>% 
   count(prenom)
 
-save(data_dpt, data_nat, liste_prenoms, sexes_prenoms, liste_prenoms_ascii, file = "data/prenoms_2018.Rdata")
+save(data_dpt, data_nat, liste_prenoms, sexes_prenoms, liste_prenoms_ascii, file = "data/prenoms_2019.Rdata")
 

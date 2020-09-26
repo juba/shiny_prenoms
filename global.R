@@ -6,8 +6,8 @@ library(g2r)
 library(glue)
 library(data.table)
 
-load(file = "data/prenoms_2018.Rdata")
-load(file = "data/departements_2018.Rdata")
+load(file = "data/prenoms_2019.Rdata")
+load(file = "data/departements_2019.Rdata")
 
 data_nat <- data.table(data_nat, key = "prenom")
 data_dpt <- data.table(data_dpt, key = "prenom")
