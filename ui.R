@@ -21,7 +21,7 @@ controls <- glideControls(
 
 
 ui <- fluidPage(
-    title = "Prénoms 1900-2019",
+    title = "Prénoms 1900-2020",
     theme = "shiny_prenoms.css",
     fluidRow(
         div(class="glide-wrapper",
@@ -44,7 +44,7 @@ ui <- fluidPage(
                 
                 screen(
                     h1("Prénoms donnés à la naissance en France"),
-                    h2("1900-2019")
+                    h2("1900-2020")
                 ),
                 screen(
                     next_condition = "input.prenom != ''",
@@ -57,8 +57,8 @@ ui <- fluidPage(
                     sliderInput("periode",
                         "Période :",
                         min = 1900,
-                        max = 2019,
-                        value = c(1900,2019),
+                        max = 2020,
+                        value = c(1900,2020),
                         step = 1,
                         sep = "",
                         width = "90%")
@@ -181,8 +181,8 @@ ui <- fluidPage(
                     sliderInput("periode_comp",
                         "Période :",
                         min = 1900,
-                        max = 2019,
-                        value = c(1900,2019),
+                        max = 2020,
+                        value = c(1900,2020),
                         step = 1,
                         sep = "",
                         width = "90%")
